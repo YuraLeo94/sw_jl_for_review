@@ -166,7 +166,7 @@ function AddProduct(): JSX.Element {
             <Button className='sw-button' variant="light" onClick={onCancel}>{names.ADD_FORM_CANCEL_BUTTON}</Button>
           </div>
         </div>
-        <form className='d-flex flex-column mt-5 px-2 product-add-form'>
+        <form className='d-flex flex-column mt-5 px-2 product-add-form' id="product_form">
           <div className='field-item'>
             <label>
               {names.ADD_FORM_SKU_LABEL}
