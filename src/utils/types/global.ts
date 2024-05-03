@@ -4,8 +4,30 @@ export const route = {
 }
 
 export enum PRODUCT_TYPES {
-    DVD = 'DVD',
-    BOOK = 'Book',
-    FURNITURE = 'Furniture',
-    NONE = ''
+    DVD = 1,
+    BOOK = 2,
+    FURNITURE = 3,
+    NONE = 0
 }
+
+export type RequestStatus = 'success' | 'failed';
+export interface IexecResInfo {
+    message: string | string[];
+    status: RequestStatus;
+}
+export interface IProduct {
+    sku: string;
+    name: string;
+    price: number;
+    type: PRODUCT_TYPES;
+    size: number | null;
+    weight: number | null;
+    width: number | null;
+    height: number | null;
+    length: number | null;
+}
+
+export interface IReviceProductsResponse {
+    execResInfo: IexecResInfo;
+    products: IProduct[];
+} 

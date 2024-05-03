@@ -1,18 +1,20 @@
 import { Button } from 'react-bootstrap';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import names from '../../utils/types/dictionary.consts';
-import { PRODUCT_TYPES, route } from '../../utils/types/global';
+import { IProduct, PRODUCT_TYPES, route } from '../../utils/types/global';
+import { useMutation } from 'react-query';
+import ProductsService from '../../api/apiClient';
 
 
 type AddFormData = {
   sku: string;
   name: string;
   price: number;
-  productType: string;
+  productType: number;
   size?: number;
   weight?: number;
   height?: number;
@@ -20,16 +22,51 @@ type AddFormData = {
   length?: number;
 };
 
-
 function AddProduct(): JSX.Element {
   const navigate = useNavigate();
+  //   const { data: productsData } = useQuery<any>(
+  //     'get-products',
+  //     async () => {
+  //         return await ProductsService.addProduct()
+  //     },
+  //     {
+  //         onSettled: (res) => {
+  //             console.log('Res ', res);
+  //             if (res && res.execResInfo.status === 'success') {
+  //                 console.log('!!!OK');
+  //             }
+  //         }
+  //     }
+  // );
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
+
+
+  const { mutate: addProduct } = useMutation<any, Error, IProduct>(
+    async (product: IProduct) => { return await ProductsService.addProduct(product) }
+    ,
+    {
+      onSettled: (res) => {
+        console.log('Res ', res);
+        if (res && res?.status === 'success') {
+          console.log('!!!OK');
+          navigate(route.HOME);
+        }
+        const errors = res?.errors;
+        console.log('ERRORS', errors);
+        if (errors && Object.keys(errors).length > 0) {
+          console.log('ERRORS', errors);
+          setValidationErrors(errors);
+        }
+      }
+    }
+  );
 
   const typeOptions = [
     { id: 'DVD', value: PRODUCT_TYPES.DVD, text: names.ADD_FORM_TYPE_0 },
     { id: 'Book', value: PRODUCT_TYPES.BOOK, text: names.ADD_FORM_TYPE_1 },
     { id: 'Furniture', value: PRODUCT_TYPES.FURNITURE, text: names.ADD_FORM_TYPE_2 }
   ];
-  
+
   const defaultSchema = yup.object().shape({
     sku: yup.string().required(names.ADD_FORM_REQUIRED_MESSAGE),
     name: yup.string().required(names.ADD_FORM_REQUIRED_MESSAGE),
@@ -44,12 +81,12 @@ function AddProduct(): JSX.Element {
           return /^\d+(\.\d{1,2})?$/.test(value.toString());
         },
       ),
-    productType: yup.string().required(names.ADD_FORM_REQUIRED_MESSAGE),
+    productType: yup.number().required(names.ADD_FORM_REQUIRED_MESSAGE),
   });
 
   const [productType, setProductType] = useState<PRODUCT_TYPES>(PRODUCT_TYPES.NONE);
   const [validationSchema, setValidationSchema] = useState<yup.AnyObjectSchema>(defaultSchema);
-  const { register, formState: { errors, isValid }, getValues, trigger, reset } = useForm<AddFormData>({
+  const { register, formState: { errors, isValid }, unregister, getValues, trigger, reset } = useForm<AddFormData>({
     resolver: yupResolver(validationSchema)
   });
 
@@ -58,14 +95,46 @@ function AddProduct(): JSX.Element {
     navigate(route.HOME);
   };
 
+  const getValuesOfProduct = (): IProduct => {
+
+    const size = getValues('size');
+    const weight = getValues('weight');
+    const width = getValues('width');
+    const height = getValues('height');
+    const length = getValues('length');
+    return {
+      sku: getValues('sku') ?? '',
+      name: getValues('name') ?? '',
+      price: parseFloat(getValues('price').toString()),
+      type: parseInt(getValues('productType').toString()),
+      size: size !== undefined ? parseInt(size.toString()) : null,
+      weight: weight !== undefined ? parseFloat(weight.toString()) : null,
+      width: width !== undefined ? parseFloat(width.toString()) : null,
+      height: height !== undefined ? parseFloat(height.toString()) : null,
+      length: length !== undefined ? parseFloat(length.toString()) : null,
+    }
+  }
+const [activeTypeFields, setActiveTypeFields] = useState<(keyof AddFormData)[] | null>(null);
+
+const unregisterNotActiveTypeFields = () => {
+  // Unregister the field
+  activeTypeFields?.forEach(fieldName => {
+    unregister(fieldName);
+  });
+};
   const onApply = async () => {
     try {
       await trigger();
-      const formData = getValues();
-      console.log(formData, errors);
+      // console.log(formData, errors);
       if (isValid) {
-        const formData = getValues();
-        console.log(formData);
+        setValidationErrors({});
+        const product = getValuesOfProduct();
+        addProduct(product);
+        // console.log('products ',product);
+        // console.log('SCHEMA', validationSchema);
+        // console.log('GetValues', getValues());
+        // const price = getValues('price');
+        // console.log('price', price)
       }
     } catch (error) {
       console.error('Error occurred while validating:', error);
@@ -73,85 +142,96 @@ function AddProduct(): JSX.Element {
   };
 
   const handleProductTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const type = e.target.value as PRODUCT_TYPES;
-
+    // const type: PRODUCT_TYPES = e.target.value as unknown as PRODUCT_TYPES;
+    const type: PRODUCT_TYPES = parseInt(e.target.value as string) as PRODUCT_TYPES;
     setProductType(type);
+    unregisterNotActiveTypeFields();
     switch (type) {
       case PRODUCT_TYPES.DVD:
-        setValidationSchema(yup.object().shape({
-          ...defaultSchema.fields,
-          size: yup.number()
-            .required(names.ADD_FORM_REQUIRED_MESSAGE)
-            .typeError(names.ADD_FORM_REQUIRED_MESSAGE)
-            .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
-            .test(
-              'is-valid-size',
-              names.ADD_FORM_INVALID_DEC_VALUE,
-              () => {
-                const value: number | undefined = getValues('size');
-                if (!value) return false;
-                return /^[1-9][0-9]*$/.test(value.toString());
-              }),
-        }));
-        break;
+        {
+          setActiveTypeFields(['size']);
+          setValidationSchema(yup.object().shape({
+            ...defaultSchema.fields,
+            size: yup.number()
+              .required(names.ADD_FORM_REQUIRED_MESSAGE)
+              .typeError(names.ADD_FORM_REQUIRED_MESSAGE)
+              .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
+              .test(
+                'is-valid-size',
+                names.ADD_FORM_INVALID_DEC_VALUE,
+                () => {
+                  const value: number | undefined = getValues('size');
+                  if (!value) return false;
+                  return /^[1-9][0-9]*$/.test(value.toString());
+                }),
+          }));
+          break;
+        }
       case PRODUCT_TYPES.BOOK:
-        setValidationSchema(yup.object().shape({
-          ...defaultSchema.fields,
-          weight: yup.number()
-            .required(names.ADD_FORM_REQUIRED_MESSAGE)
-            .typeError(names.ADD_FORM_REQUIRED_MESSAGE)
-            .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
-            .test(
-              'is-valid-weight',
-              names.ADD_FORM_INCORECT_VALUE,
-              () => {
-                const value: number | undefined = getValues('weight');
-                if (!value) return false;
-                return /^\d+(\.\d{1,3})?$/.test(value.toString());
-              }),
-        }));
-        break;
+        {
+          setActiveTypeFields(['weight']);
+          setValidationSchema(yup.object().shape({
+            ...defaultSchema.fields,
+            weight: yup.number()
+              .required(names.ADD_FORM_REQUIRED_MESSAGE)
+              .typeError(names.ADD_FORM_REQUIRED_MESSAGE)
+              .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
+              .test(
+                'is-valid-weight',
+                names.ADD_FORM_INCORECT_VALUE,
+                () => {
+                  const value: number | undefined = getValues('weight');
+                  if (!value) return false;
+                  return /^\d+(\.\d{1,3})?$/.test(value.toString());
+                }),
+          }));
+          break;
+        }
       case PRODUCT_TYPES.FURNITURE:
-        setValidationSchema(yup.object().shape({
-          ...defaultSchema.fields,
-          height: yup.number()
-            .required(names.ADD_FORM_REQUIRED_MESSAGE)
-            .typeError(names.ADD_FORM_REQUIRED_MESSAGE)
-            .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
-            .test(
-              'is-valid-height',
-              names.ADD_FORM_INCORECT_VALUE,
-              () => {
-                const value: number | undefined = getValues('height');
-                if (!value) return false;
-                return /^\d+(\.\d{1,2})?$/.test(value.toString());
-              }),
-          width: yup.number()
-            .required(names.ADD_FORM_REQUIRED_MESSAGE)
-            .typeError(names.ADD_FORM_REQUIRED_MESSAGE)
-            .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
-            .test(
-              'is-valid-width',
-              names.ADD_FORM_INCORECT_VALUE,
-              () => {
-                const value: number | undefined = getValues('width');
-                if (!value) return false;
-                return /^\d+(\.\d{1,2})?$/.test(value.toString());
-              }),
-          length: yup.number().required(names.ADD_FORM_REQUIRED_MESSAGE)
-            .typeError(names.ADD_FORM_REQUIRED_MESSAGE).positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
-            .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
-            .test(
-              'is-valid-length',
-              names.ADD_FORM_INCORECT_VALUE,
-              () => {
-                const value: number | undefined = getValues('length');
-                if (!value) return false;
-                return /^\d+(\.\d{1,2})?$/.test(value.toString());
-              }),
-        }));
-        break;
+        {
+          setActiveTypeFields(['height', 'width', 'length']);
+          setValidationSchema(yup.object().shape({
+            ...defaultSchema.fields,
+            height: yup.number()
+              .required(names.ADD_FORM_REQUIRED_MESSAGE)
+              .typeError(names.ADD_FORM_REQUIRED_MESSAGE)
+              .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
+              .test(
+                'is-valid-height',
+                names.ADD_FORM_INCORECT_VALUE,
+                () => {
+                  const value: number | undefined = getValues('height');
+                  if (!value) return false;
+                  return /^\d+(\.\d{1,2})?$/.test(value.toString());
+                }),
+            width: yup.number()
+              .required(names.ADD_FORM_REQUIRED_MESSAGE)
+              .typeError(names.ADD_FORM_REQUIRED_MESSAGE)
+              .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
+              .test(
+                'is-valid-width',
+                names.ADD_FORM_INCORECT_VALUE,
+                () => {
+                  const value: number | undefined = getValues('width');
+                  if (!value) return false;
+                  return /^\d+(\.\d{1,2})?$/.test(value.toString());
+                }),
+            length: yup.number().required(names.ADD_FORM_REQUIRED_MESSAGE)
+              .typeError(names.ADD_FORM_REQUIRED_MESSAGE).positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
+              .positive(names.ADD_FROM_VALUE_NOT_POSITIVE)
+              .test(
+                'is-valid-length',
+                names.ADD_FORM_INCORECT_VALUE,
+                () => {
+                  const value: number | undefined = getValues('length');
+                  if (!value) return false;
+                  return /^\d+(\.\d{1,2})?$/.test(value.toString());
+                }),
+          }));
+          break;
+        }
       default:
+        setActiveTypeFields(null);
         break;
     }
   };
@@ -173,31 +253,38 @@ function AddProduct(): JSX.Element {
             </label>
             <input id="sku" type="text" {...register('sku')} />
             {errors.sku && <p className='text-danger'>{errors.sku.message}</p>}
+            {validationErrors?.['sku'] && <p className='text-danger'>{validationErrors['sku']}</p>}
           </div>
           <div className='field-item'>
             <label>
               {names.ADD_FORM_NAME_LABEL}
             </label>
             <input id="name" type="text" {...register('name')} />
-            {errors.name && <p className='text-danger'>{errors.name.message}</p>}</div>
+            {errors.name && <p className='text-danger'>{errors.name.message}</p>}
+            {validationErrors?.['name'] && <p className='text-danger'>{validationErrors['name']}</p>}
+          </div>
           <div className='field-item'>
             <label>
               {names.ADD_FORM_PRICE_LABEL}
             </label>
             <input id="price" type="number" {...register('price')} />
-            {errors.price && <p className='text-danger'>{errors.price.message}</p>}</div>
+            {errors.price && <p className='text-danger'>{errors.price.message}</p>}
+            {validationErrors?.['price'] && <p className='text-danger'>{validationErrors['price']}</p>}
+          </div>
+
           <div>
             <label className='me-3'>
               {names.ADD_FORM_TYPE_LABEL}
             </label>
             <div className='custom-select'>
               <select className='custom-select' {...register('productType')} onChange={handleProductTypeChange}>
-                <option value="">{names.ADD_FORM_TYPE_LABEL}</option>
+                <option value={0}>{names.ADD_FORM_TYPE_LABEL}</option>
                 {typeOptions.map(option => <option key={option.value} id={option.id} value={option.value}>{option.text}</option>)}
               </select>
 
             </div>
             {errors.productType && <p className='text-danger'>{errors.productType.message}</p>}
+            {validationErrors?.['type'] && <p className='text-danger'>{validationErrors['type']}</p>}
           </div>
           {productType === PRODUCT_TYPES.DVD && (
             <div className='field-item'>
@@ -206,8 +293,10 @@ function AddProduct(): JSX.Element {
               </label>
               <input id="size" type="number" {...register('size')} />
               {errors.size && <p className='text-danger'>{errors.size.message}</p>}
+              {validationErrors?.['size'] && <p className='text-danger'>{validationErrors['size']}</p>}
               <p>
-                {names.ADD_FORM_SIZE_DESCRIPTION}</p>
+                {names.ADD_FORM_SIZE_DESCRIPTION}
+              </p>
             </div>
           )}
           {productType === PRODUCT_TYPES.BOOK && (
@@ -217,6 +306,7 @@ function AddProduct(): JSX.Element {
               </label>
               <input id="weight" type="number" {...register('weight')} />
               {errors.weight && <p className='text-danger'>{errors.weight.message}</p>}
+              {validationErrors?.['weight'] && <p className='text-danger'>{validationErrors['weight']}</p>}
               <p>{names.ADD_FORM_WEIGHT_DESCRIPTION}</p>
             </div>
           )}
@@ -228,6 +318,7 @@ function AddProduct(): JSX.Element {
                 </label>
                 <input id="height" type="number" {...register('height')} />
                 {errors.height && <p className='text-danger'>{errors.height.message}</p>}
+                {validationErrors?.['height'] && <p className='text-danger'>{validationErrors['height']}</p>}
               </div>
               <div className='field-item'>
                 <label>
@@ -235,6 +326,7 @@ function AddProduct(): JSX.Element {
                 </label>
                 <input id="width" type="number" {...register('width')} />
                 {errors.width && <p className='text-danger'>{errors.width.message}</p>}
+                {validationErrors?.['width'] && <p className='text-danger'>{validationErrors['width']}</p>}
               </div>
               <div className='field-item'>
                 <label>
@@ -242,6 +334,7 @@ function AddProduct(): JSX.Element {
                 </label>
                 <input id="length" type="number" {...register('length')} />
                 {errors.length && <p className='text-danger'>{errors.length.message}</p>}
+                {validationErrors?.['length'] && <p className='text-danger'>{validationErrors['length']}</p>}
               </div>
               <p>{names.ADD_FORM_FURNITURE_DESCRIPTION}</p>
             </>

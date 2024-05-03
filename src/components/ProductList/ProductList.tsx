@@ -1,13 +1,41 @@
 import { Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { dummyProductsData } from './dummyData';
-import { useState } from 'react';
+// import { dummyProductsData } from './dummyData';
+import { useEffect, useState } from 'react';
 import names from '../../utils/types/dictionary.consts';
-import { route } from '../../utils/types/global';
+import { IProduct, IReviceProductsResponse, route } from '../../utils/types/global';
+import { useMutation, useQuery } from 'react-query';
+import ProductsService from '../../api/apiClient';
 
 function ProductList(): JSX.Element {
     const navigate = useNavigate();
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
+    const [products, setProducts] = useState<IProduct[]>([]);
+    const { data: productsData, refetch: refetchProducts } = useQuery<IReviceProductsResponse>(
+        'get-products',
+        async () => {
+            return await ProductsService.getAllProducts()
+        },
+        {
+            onSettled: (res) => {
+                console.log('Res ', res);
+                if (res && res.execResInfo.status === 'success') {
+                    setProducts(res.products);
+                }
+            }
+        }
+    );
+    const { mutate: deleteByIds } = useMutation<any, Error>(
+        async () => {
+            return await ProductsService.deleteByIds(selectedItems)
+        },
+        {
+            onSettled: async (res) => {
+                console.log('Res ', res);
+                await refetchProducts();
+            }
+        }
+    );
 
     const onAdd = () => {
         navigate(route.ADD_PRODUCT);
@@ -15,6 +43,8 @@ function ProductList(): JSX.Element {
 
     const onDelete = () => {
         console.log('Delete: ', selectedItems);
+        deleteByIds();
+
     }
 
     const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,6 +55,12 @@ function ProductList(): JSX.Element {
             setSelectedItems(selectedItems.filter(item => item !== value));
         }
     };
+
+    useEffect(() => {
+        // const res = ProductService.getTodos();
+        // console.log('Recived data RES ', res);
+        console.log('productsData ', productsData);
+    }, [productsData]);
 
     return (
         <>
@@ -37,25 +73,28 @@ function ProductList(): JSX.Element {
                     </div>
                 </div>
                 <div className='product-items-container py-5 px-3 d-flex flex-fill flex-row flex-wrap'>
-                    {dummyProductsData.map((product) => (
-                        <div key={product.SKU} className='product-item d-flex p-3 border border-dark '>
+                    {products.map((product) => (
+                        <div key={product.sku} className='product-item d-flex p-3 border border-dark '>
                             <div>
                                 <label className="sw-checkbox delete-checkbox">
                                     <input
                                         type="checkbox"
-                                        value={product.SKU}
+                                        value={product.sku}
                                         onChange={handleCheckboxChange}
                                     />
                                     <span className="checkmark"></span>
                                 </label>
                             </div>
                             <div className='d-flex flex-column mt-3 align-items-center w-100'>
-                                <div>{product.SKU}</div>
+                                <div>{product.sku}</div>
                                 <div>{product.name}</div>
                                 <div>{product.price.toFixed(2)} $</div>
-                                {product?.sizeMB && <div>{names.PRODCUT_LIST_SIZE_TEXT.replace('{sizeMB}', product.sizeMB.toString())}</div>}
-                                {product?.weightKg && <div>{names.PRODCUT_LIST_WEIGHT_TEXT.replace('{weightKg}', product.weightKg.toString())}</div>}
-                                {product?.dimensions && <div>{names.PRODCUT_LIST_DIMENSION_TEXT} {product?.dimensions}</div>}
+                                {product?.size && <div>{names.PRODCUT_LIST_SIZE_TEXT.replace('{sizeMB}', product.size.toString())}</div>}
+                                {product?.weight && <div>{names.PRODCUT_LIST_WEIGHT_TEXT.replace('{weightKg}', product.weight.toString())}</div>}
+                                {product?.width && product?.height && product?.length &&
+                                    <div>
+                                        {names.PRODCUT_LIST_DIMENSION_TEXT} {product.weight}x{product.height}x{product.length}
+                                    </div>}
                             </div>
                         </div>
                     ))}
