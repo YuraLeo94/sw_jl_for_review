@@ -18,29 +18,24 @@ abstract class Product
 
     abstract function getNewProductParams();
 
-    public function validateSKU(bool $isExist)
+    private function validateSKU(bool $isExist)
     {
         $isValid = !empty($this->sku) && !preg_match('/\s/', $this->sku);
 
         return $isValid && !$isExist;
     }
 
-    public function validateName()
+    private function validateName()
     {
         return (strlen($this->name) > 0);
     }
 
-    public function validatePrice()
-    {
-        return !(filter_var($this->price, FILTER_VALIDATE_FLOAT) && (strlen($this->price) > 0) && floatval($this->price >= 0));
-    }
-
-    // public function validatePrice()
+    // private function validatePrice()
     // {
-    //     return !(filter_var($this->price, FILTER_VALIDATE_FLOAT) === false && strlen($this->price) > 0 && $this->price >= 0);
+    //     return !(filter_var($this->price, FILTER_VALIDATE_FLOAT) && (strlen($this->price) > 0) && floatval($this->price >= 0));
     // }
 
-    public function validateType()
+    private function validateType()
     {
         // Check if $this->type is an integer between 1 and 3
         return (is_int($this->type) && $this->type >= 1 && $this->type <= 3);

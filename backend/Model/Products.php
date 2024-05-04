@@ -21,51 +21,11 @@ class ProductsModel implements IProductsModel
         $this->table_name = $table_name;
     }
 
-    public function add1(array $data): array
-    {
-        $con = (new Database())->get();
-        $execResInfo = array('status' => 'success', 'message' => 'Product added to the database');
-        try {
-            // Prepare the query
-            $query = 'INSERT INTO ' . $this->table_name . ' VALUES (' . implode(',', array_fill(0, count($data), '?')) . ')';
-            $stmt = $con->prepare($query);
-
-            // Detect bind types dynamically
-            $types = $this->detectBindTypes($data); // Assuming detectBindTypes function is defined
-
-            // Bind parameters
-            $params = [];
-            foreach ($data as &$value) {
-                $params[] = &$value;
-            }
-            array_unshift($params, $types);
-            call_user_func_array(array($stmt, 'bind_param'), $params);
-
-            // Execute the statement
-            $success = $stmt->execute();
-
-            if (!$success) {
-                $execResInfo = array('status' => 'failed', 'message' => 'Failed to add product.');
-            }
-        } catch (PDOException $e) {
-            $execResInfo = array('status' => 'failed', 'message' => $e->getMessage());
-        } finally {
-            // Close the statement and the database connection
-            if ($stmt) {
-                $stmt->close();
-            }
-            if ($con) {
-                $con->close();
-            }
-        }
-
-        return $execResInfo;
-    }
-
     public function add(array $data): array
     {
         // return ['status' => 'test', 'message' => 'check parsed data', 'data' => $data];
-        $execResInfo = array('status' => 'success', 'message' => 'Product added to the database');
+        $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productAddOkMessage']);
+        
         try {
 
             $con = (new Database())->get();
@@ -76,8 +36,12 @@ class ProductsModel implements IProductsModel
 
             // Check if the statement was prepared successfully
             if (!$stmt) {
-                return array('status' => 'failed', 'message' => 'Failed to prepare statement', 'db' => $con);
-                throw new Exception('Failed to prepare statement');
+                return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['prepareStatementFailedMessage']);
+                // return array(
+                //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+                //     RESPONSE_NAMES['messagesKeyName'] => RESPONSE_NAMES['prepareStatementFailedMessage']
+                // );
+                throw new Exception(RESPONSE_NAMES['prepareStatementFailedMessage']);
             }
 
             // Detect bind types dynamically
@@ -92,8 +56,12 @@ class ProductsModel implements IProductsModel
 
             // Check if bind_param method exists on the statement object
             if (!method_exists($stmt, 'bind_param')) {
-                return array('status' => 'failed', 'message' => 'bind_param method not found on statement object');
-                throw new Exception('bind_param method not found on statement object');
+                return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['bindParamIssueMessage']);
+                // return array(
+                //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+                //     RESPONSE_NAMES['messagesKeyName'] => RESPONSE_NAMES['bindParamIssueMessage']
+                // );
+                throw new Exception(RESPONSE_NAMES['bindParamIssueMessage']);
             }
 
             // Call bind_param method using call_user_func_array
@@ -103,12 +71,24 @@ class ProductsModel implements IProductsModel
             $success = $stmt->execute();
 
             if (!$success) {
-                $execResInfo = array('status' => 'failed', 'message' => 'Failed to add product.');
+                $execResInfo = ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['productAddFailedMessage']);
+                // $execResInfo = array(
+                //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+                //     RESPONSE_NAMES['messagesKeyName'] => RESPONSE_NAMES['productAddFailedMessage']
+                // );
             }
         } catch (PDOException $e) {
-            $execResInfo = array('status' => 'failed', 'message' => $e->getMessage());
+            $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
+            // $execResInfo = array(
+            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
+            // );
         } catch (Exception $e) {
-            $execResInfo = array('status' => 'failed', 'message' => $e->getMessage());
+            $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
+            // $execResInfo = array(
+            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
+            // );
         } finally {
             // Close the statement and the database connection
             if ($stmt) {
@@ -130,7 +110,8 @@ class ProductsModel implements IProductsModel
     // need fix saving data to the object;
     public function getAll(): array
     {
-        $execResInfo = array('status' => 'success', 'message' => 'Products received successfully.');
+        $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productRecivedSuccessMessage']);
+                
         $con = (new Database())->get();
         $query = "SELECT * FROM " . $this->table_name;
         $result = mysqli_query($con, $query);
@@ -138,9 +119,16 @@ class ProductsModel implements IProductsModel
 
         // Check if the query was successful
         if (!$result) {
-            $execResInfo = array('status' => 'failed', 'message' => mysqli_error($con));
-            return array('execResInfo' => $execResInfo, 'products' => $products);
-            throw new Exception("Query failed: " . mysqli_error($con));
+            $execResInfo = ResponseController::getPreparedDataResponseFailed(mysqli_error($con));
+            // $execResInfo = array(
+            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+            //     RESPONSE_NAMES['messagesKeyName'] => mysqli_error($con)
+            // );
+            return array(
+                EXEC_RES_INFO_KEY_NAME => $execResInfo,
+                RESPONSE_NAMES['productsKeyName'] => $products
+            );
+            throw new Exception(DB_QUERY_FAILED . mysqli_error($con));
         }
         try {
             // $products = mysqli_fetch_all($result, MYSQLI_ASSOC);
@@ -160,19 +148,27 @@ class ProductsModel implements IProductsModel
             // Free the result set
             mysqli_free_result($result);
         } catch (Exception $e) {
-            $execResInfo = array('status' => 'failed', 'message' => $e->getMessage());
+            $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
+            // $execResInfo = array(
+            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
+            // );
         } finally {
             // Close the database connection
             if ($con) {
                 mysqli_close($con);
             }
         }
-        return array('execResInfo' => $execResInfo, 'products' => $products);
+        return array(EXEC_RES_INFO_KEY_NAME => $execResInfo, PRODUCTS_KEY_NAME => $products);
     }
 
     public function deleteListOfProducts(array $primaryKeys): array
     {
-        $execResInfo = array('status' => 'success', 'message' => 'Products deleted successfully.');
+        $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productDeltedSuccessMessage']);
+        // $execResInfo = array(
+        //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['success'],
+        //     RESPONSE_NAMES['messagesKeyName'] => RESPONSE_NAMES['productDeltedSuccessMessage']
+        // );
         try {
             // Get the database connection
             $con = (new Database())->get();
@@ -188,7 +184,7 @@ class ProductsModel implements IProductsModel
 
             // Check if the number of placeholders matches the number of primary keys
             if ($statement && $statement->param_count != count($primaryKeys)) {
-                return array('status' => 'failed', 'message' => 'Number of placeholders does not match number of primary keys.');
+                return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['bindParamMatchIssueMessage']);
             }
 
             $types = $this->detectBindTypes($primaryKeys); // Assuming detectBindTypes function is defined
@@ -207,10 +203,14 @@ class ProductsModel implements IProductsModel
 
             // Check if the execution was successful
             if (!$success) {
-                $execResInfo = array('status' => 'failed', 'message' => 'Failed to delete products.');
+                $execResInfo = ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['productDeltedFailedMessage']);
             }
         } catch (PDOException $e) {
-            $execResInfo = array('status' => 'failed', 'message' => $e->getMessage());
+            $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
+            // $execResInfo = array(
+            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
+            // );
         } finally {
             // Close the database connection
             if ($con) {
@@ -226,13 +226,18 @@ class ProductsModel implements IProductsModel
         $query = "SELECT * FROM " . $this->table_name . " WHERE sku = ?";
         $stmt = mysqli_prepare($con, $query);
         mysqli_stmt_bind_param($stmt, "s", $sku);
+        $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['noErrorsMessage']);
 
-        $execResInfo = ['status' => 'success', 'message' => 'No errors.'];
         $item = [];
 
         if (!$stmt) {
-            return ['execResInfo' => ['status' => 'failed', 'message' => 'DB error', 'sku' => $sku], 'item' => $item];
-            throw new Exception("Query preparation failed: " . mysqli_error($con));
+            return [
+                EXEC_RES_INFO_KEY_NAME => [
+                    ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['dbErrorMEssage']),
+                ],
+                'item' => $item
+            ];
+            throw new Exception(DB_PREP_QUERY_FAILED . mysqli_error($con));
         }
 
         try {
@@ -242,7 +247,11 @@ class ProductsModel implements IProductsModel
                 $item = mysqli_fetch_all($result, MYSQLI_ASSOC);
             }
         } catch (Exception $e) {
-            $execResInfo = ['status' => 'failed', 'message' => $e->getMessage()];
+            $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
+            // $execResInfo = [
+            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
+            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
+            // ];
         } finally {
             // Close the statement
             mysqli_stmt_close($stmt);
@@ -252,7 +261,7 @@ class ProductsModel implements IProductsModel
             }
         }
 
-        return ['execResInfo' => $execResInfo, 'item' => $item];
+        return [EXEC_RES_INFO_KEY_NAME => $execResInfo, 'item' => $item];
     }
 
     function detectBindTypes(array $data): string

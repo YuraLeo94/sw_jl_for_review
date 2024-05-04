@@ -13,30 +13,11 @@ class DVD extends Product {
         $this->size = $properties['size'];
     }
 
-    // function addNew()
-    // {
-    //     try {
-    //         $con = (new Database())->get();
-    //         $query = "INSERT INTO Product (sku, name, price, type, size) VALUES (?, ?, ?, 'DVD', ?)";
-    //         $statement = $con->prepare($query);
-    
-    //         // Execute the statement
-    //         $success = $statement->execute([$this->sku, $this->name, $this->price, $this->size]);
-    //         if ($success) {
-    //             echo "Product added successfully.";
-    //         } else {
-    //             echo "Failed to add product.";
-    //         }
-    //     } catch (PDOException $e) {
-    //         echo "Error: " . $e->getMessage();
-    //     }
-    // }
-
-    function getNewProductParams() {
+    public function getNewProductParams() {
         return [$this->sku, $this->name, $this->price, $this->type, $this->size, null, null, null, null];
     }
 
-    public function validateSize()
+    private function validateSize()
     {
         if(is_numeric($this->size))
         {
