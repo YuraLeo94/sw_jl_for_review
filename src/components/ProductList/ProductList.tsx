@@ -93,7 +93,7 @@ function ProductList(): JSX.Element {
                                 {product?.weight && <div>{names.PRODCUT_LIST_WEIGHT_TEXT.replace('{weightKg}', product.weight.toString())}</div>}
                                 {product?.width && product?.height && product?.length &&
                                     <div>
-                                        {names.PRODCUT_LIST_DIMENSION_TEXT} {product.weight}x{product.height}x{product.length}
+                                        {names.PRODCUT_LIST_DIMENSION_TEXT} {product.width}x{product.height}x{product.length}
                                     </div>}
                             </div>
                         </div>
