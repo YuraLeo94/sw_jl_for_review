@@ -4,6 +4,8 @@ namespace Database;
 
 use mysqli;
 
+  // static one instance example ->
+            // https://github.com/Dmitrijs1710/Crypto_market/blob/main/app/Database.php
 class Database
 {
     private static $connection = null;

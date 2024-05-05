@@ -1,12 +1,12 @@
 <?php
 
-namespace Products;
+namespace Model\Products;
 
-use Products\Product;
+use Model\Products\Product;
 
 class Book extends Product
 {
-    protected $weight;
+    private $weight;
 
 
     function __construct($properties)
@@ -15,15 +15,18 @@ class Book extends Product
         $this->weight = $properties['weight'];
     }
 
-    function getNewProductParams()
+    function getNewProductParams(): array
     {
         return [$this->sku, $this->name, $this->price, $this->type, null, $this->weight, null, null, null];
     }
 
-    public function validate(bool $isSkuExist)
+    /**
+     * @return array<array<string,string>>
+     */
+    public function validate(bool $isSkuExist): array
     {
         $messages = $this->validateProduct($isSkuExist);
-        if (!$this->validateFloatProperty('weight')) {
+        if (!$this->validateFloatProperty($this->weight)) {
             $messages['weight'] = INVALID_WEIGHT . " -> " . $this->weight;
         }
         return $messages;

@@ -1,24 +1,15 @@
 <?php
 
-namespace Model;
+namespace Services;
 
 use Controllers\ResponseController;
 
 use Database\Database;
 use PDOException;
 use Exception;
-// easy to read update
-interface IProductsModel
-{
-    public function add(array $data);
-    public function getAll();
-}
+use utils\BindHelper;
 
-// Rename to repositories and create repor services ProductsModel -> ProductsServiece
-// example here -> https://github.com/Dmitrijs1710/Crypto_market/blob/main/app/Repositories/CoinsFromApiRepository.php
-// ask naming chat gtp!!
-// Products move to model;
-class ProductsModel implements IProductsModel
+class ProductsService
 {
 
     private $table_name;
@@ -48,25 +39,11 @@ class ProductsModel implements IProductsModel
                 throw new Exception(RESPONSE_NAMES['prepareStatementFailedMessage']);
             }
 
-            // Detect bind types dynamically
-            $types = $this->detectBindTypes($data); // Assuming detectBindTypes function is defined
-
-            // Bind parameters
-            $params = [];
-            foreach ($data as &$value) {
-                $params[] = &$value;
-            }
-            array_unshift($params, $types);
-
-            // Check if bind_param method exists on the statement object
-            if (!method_exists($stmt, 'bind_param')) {
-                return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['bindParamIssueMessage']);
-
-                throw new Exception(RESPONSE_NAMES['bindParamIssueMessage']);
+            if ($stmt && $stmt->param_count != count($data)) {
+                return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['bindParamMatchIssueMessage']);
             }
 
-            // Call bind_param method using call_user_func_array
-            call_user_func_array(array($stmt, 'bind_param'), $params);
+            BindHelper::bind($stmt, $data);
 
             // Execute the statement
             $success = $stmt->execute();
@@ -79,22 +56,14 @@ class ProductsModel implements IProductsModel
         } catch (Exception $e) {
             $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
         } finally {
-            // Close the statement and the database connection
             if ($stmt) {
                 $stmt->close();
             }
-            // if ($con) {
-            //     $con->close();
-            // }
-
-            // static one instance example ->
-            // https://github.com/Dmitrijs1710/Crypto_market/blob/main/app/Database.php
         }
 
         return $execResInfo;
     }
 
-    // need fix saving data to the object;
     public function getAll(): array
     {
         $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productRecivedSuccessMessage']);
@@ -107,10 +76,7 @@ class ProductsModel implements IProductsModel
         // Check if the query was successful
         if (!$result) {
             $execResInfo = ResponseController::getPreparedDataResponseFailed(mysqli_error($con));
-            // $execResInfo = array(
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => mysqli_error($con)
-            // );
+
             return array(
                 EXEC_RES_INFO_KEY_NAME => $execResInfo,
                 RESPONSE_NAMES['productsKeyName'] => $products
@@ -118,10 +84,7 @@ class ProductsModel implements IProductsModel
             throw new Exception(DB_QUERY_FAILED . mysqli_error($con));
         }
         try {
-            // $products = mysqli_fetch_all($result, MYSQLI_ASSOC);
-
             while ($row = mysqli_fetch_assoc($result)) {
-                // Convert types as needed
                 $row['price'] = $row['price'] !== null ? (float)$row['price'] : null;
                 $row['size'] = $row['size'] !== null ? (int)$row['size'] : null;
                 $row['weight'] = $row['weight'] !== null ? (float)$row['weight'] : null;
@@ -132,19 +95,9 @@ class ProductsModel implements IProductsModel
             }
 
 
-            // Free the result set
             mysqli_free_result($result);
         } catch (Exception $e) {
             $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
-            // $execResInfo = array(
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
-            // );
-        } finally {
-            // Close the database connection
-            // if ($con) {
-            //     mysqli_close($con);
-            // }
         }
         return array(EXEC_RES_INFO_KEY_NAME => $execResInfo, PRODUCTS_KEY_NAME => $products);
     }
@@ -152,10 +105,7 @@ class ProductsModel implements IProductsModel
     public function deleteListOfProducts(array $primaryKeys): array
     {
         $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productDeltedSuccessMessage']);
-        // $execResInfo = array(
-        //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['success'],
-        //     RESPONSE_NAMES['messagesKeyName'] => RESPONSE_NAMES['productDeltedSuccessMessage']
-        // );
+
         try {
             // Get the database connection
             $con = Database::get();
@@ -167,26 +117,23 @@ class ProductsModel implements IProductsModel
             $query = "DELETE FROM " . $this->table_name . " WHERE sku IN ($placeholders)";
 
             // Prepare the statement
-            $statement = $con->prepare($query);
+            $stmt = $con->prepare($query);
+
+            if (!$stmt) {
+                return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['prepareStatementFailedMessage']);
+
+                throw new Exception(RESPONSE_NAMES['prepareStatementFailedMessage']);
+            }
 
             // Check if the number of placeholders matches the number of primary keys
-            if ($statement && $statement->param_count != count($primaryKeys)) {
+            if ($stmt && $stmt->param_count != count($primaryKeys)) {
                 return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['bindParamMatchIssueMessage']);
             }
 
-            $types = $this->detectBindTypes($primaryKeys); // Assuming detectBindTypes function is defined
-
-            // Bind parameters
-            $params = [];
-            foreach ($primaryKeys as &$value) {
-                $params[] = &$value;
-            }
-            array_unshift($params, $types);
-            // return array('status' => 'check', 'data' => array('params' => $params, 'placeholders' => $placeholders));
-            call_user_func_array(array($statement, 'bind_param'), $params);
+            BindHelper::bind($stmt, $primaryKeys);
 
             // Execute the statement
-            $success = $statement->execute();
+            $success = $stmt->execute();
 
             // Check if the execution was successful
             if (!$success) {
@@ -194,20 +141,11 @@ class ProductsModel implements IProductsModel
             }
         } catch (PDOException $e) {
             $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
-            // $execResInfo = array(
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
-            // );
-        } finally {
-            // Close the database connection
-            // if ($con) {
-            //     $con->close(); // Close the connection properly
-            // }
         }
         return $execResInfo;
     }
 
-    public function takeEntryBySKU($sku)
+    public function takeEntryBySKU($sku): array
     {
         $con = Database::get();
         $query = "SELECT * FROM " . $this->table_name . " WHERE sku = ?";
@@ -235,47 +173,10 @@ class ProductsModel implements IProductsModel
             }
         } catch (Exception $e) {
             $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
-            // $execResInfo = [
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
-            // ];
         } finally {
-            // Close the statement
             mysqli_stmt_close($stmt);
-            // Close the database connection
-            // if ($con) {
-            //     mysqli_close($con);
-            // }
         }
 
         return [EXEC_RES_INFO_KEY_NAME => $execResInfo, 'item' => $item];
-    }
-
-    // TODO move to helper
-    function detectBindTypes(array $data): string
-    {
-        $types = '';
-        foreach ($data as $value) {
-            // Determine the type of each value
-            $type = gettype($value);
-
-            // Map PHP types to MySQLi types
-            switch ($type) {
-                case 'boolean':
-                    $types .= 'i'; // Boolean values are mapped to integers (0 or 1)
-                    break;
-                case 'integer':
-                    $types .= 'i'; // Integer values
-                    break;
-                case 'double':
-                    $types .= 'd'; // Double (float) values
-                    break;
-                case 'string':
-                default:
-                    $types .= 's'; // Default to string for other types
-                    break;
-            }
-        }
-        return $types;
     }
 }

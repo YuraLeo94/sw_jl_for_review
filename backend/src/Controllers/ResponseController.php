@@ -2,16 +2,17 @@
 
 namespace Controllers;
 
+
 class ResponseController
 {
 
-    function __construct()
-    {
-    }
+    // function __construct()
+    // {
+    // }
 
     static function response(array $response)
     {
-        // header("Content-Type: application/json");
+        header("Content-Type: application/json"); // withou it save get req to PC only when test server
         echo json_encode($response);
     }
 

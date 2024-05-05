@@ -1,10 +1,11 @@
 <?php
 
-namespace Products;
+namespace Model\Products;
 
-use Products\Product;
+use Model\Products\Product;
 
-class DVD extends Product {
+class DVD extends Product
+{
     private $size;
 
 
@@ -14,21 +15,20 @@ class DVD extends Product {
         $this->size = $properties['size'];
     }
 
-    public function getNewProductParams() {
+    public function getNewProductParams(): array
+    {
         return [$this->sku, $this->name, $this->price, $this->type, $this->size, null, null, null, null];
     }
 
-    private function validateSize()
+    private function validateSize(): bool
     {
-        if(is_numeric($this->size))
-        {
-            return true;
-        }
-
-        return false;
+        return is_numeric($this->size);
     }
 
-    public function validate(bool $isSkuExist)
+    /**
+     * @return array<array<string,string>>
+     */
+    public function validate(bool $isSkuExist): array
     {
         $messages = $this->validateProduct($isSkuExist);
         if (!$this->validateSize()) {

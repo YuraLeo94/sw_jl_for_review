@@ -1,5 +1,6 @@
 <?php
-namespace Products;
+
+namespace Model\Products;
 
 abstract class Product
 {
@@ -17,44 +18,33 @@ abstract class Product
     }
 
 
-    abstract function getNewProductParams();
+    abstract function getNewProductParams(): array;
 
-    private function validateSKU(bool $isExist)
+    private function validateSKU(bool $isExist): bool
     {
         $isValid = !empty($this->sku) && !preg_match('/\s/', $this->sku);
 
         return $isValid && !$isExist;
     }
 
-    private function validateName()
+    private function validateName(): bool
     {
         return (strlen($this->name) > 0);
     }
 
-    private function validateType()
+    private function validateType(): bool
     {
-        // Check if $this->type is an integer between 1 and 3
         return (is_int($this->type) && $this->type >= 1 && $this->type <= 3);
     }
 
-    protected function validateFloatProperty(string $propertyName)
+    protected function validateFloatProperty(float $value): bool
     {
-        // Check if the property exists and is not empty
-        if (!property_exists($this, $propertyName) || empty($this->$propertyName)) {
-            return false; // or whatever behavior you want for empty properties
-        }
-
-        // Remove any thousand separators and trim whitespace
-        $propertyValue = str_replace(',', '', trim($this->$propertyName));
-
-        // Validate if it's a valid float and greater than 0
-        if (!filter_var($propertyValue, FILTER_VALIDATE_FLOAT) || floatval($propertyValue) <= 0) {
-            return false;
-        }
-
-        return true;
+        return !(!filter_var($value, FILTER_VALIDATE_FLOAT) || floatval($value) <= 0);
     }
 
+    /**
+     * @return array<array<string,string>>
+     */
     public function validateProduct(bool $isSkuExist): array
     {
         $messages = array();
@@ -64,7 +54,7 @@ abstract class Product
         if (!$this->validateName()) {
             $messages['name'] = INVALID_NAME . "->" . $this->name;
         }
-        if (!$this->validateFloatProperty('price')) {
+        if (!$this->validateFloatProperty($this->price)) {
             $messages['price'] = INVALID_PRICE . "->" . $this->price;
         }
         if (!$this->validateType()) {

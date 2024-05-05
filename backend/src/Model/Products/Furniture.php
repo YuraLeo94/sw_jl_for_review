@@ -1,14 +1,14 @@
 <?php
 
-namespace Products;
+namespace Model\Products;
 
-use Products\Product;
+use Model\Products\Product;
 
 class Furniture extends Product
 {
-    protected $width;
-    protected $height;
-    protected $length;
+    private $width;
+    private $height;
+    private $length;
 
 
     function __construct($properties)
@@ -19,21 +19,24 @@ class Furniture extends Product
         $this->length = $properties['length'];
     }
 
-    public function getNewProductParams()
+    public function getNewProductParams(): array
     {
         return [$this->sku, $this->name, $this->price, $this->type, null, null, $this->width, $this->height, $this->length];
     }
 
-    public function validate(bool $isSkuExist)
+    /**
+     * @return array<array<string,string>>
+     */
+    public function validate(bool $isSkuExist): array
     {
         $messages = $this->validateProduct($isSkuExist);
-        if (!$this->validateFloatProperty('height')) {
+        if (!$this->validateFloatProperty($this->height)) {
             $messages['height'] = INVALID_HEIGHT . " -> " . $this->height;
         }
-        if (!$this->validateFloatProperty('width')) {
+        if (!$this->validateFloatProperty($this->width)) {
             $messages['width'] = INVALID_WIDTH . " -> " . $this->width;
         }
-        if (!$this->validateFloatProperty('length')) {
+        if (!$this->validateFloatProperty($this->length)) {
             $messages['length'] = INVALID_LENGTH . " -> " . $this->length;
         }
         return $messages;

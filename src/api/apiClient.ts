@@ -4,7 +4,8 @@ import { IProduct, IReviceProductsResponse } from "../utils/types/global";
 import { API } from "../utils/types/api.const";
 
 const apiClient = axios.create({
-    baseURL: API_URL2,
+    baseURL: API_URL,
+    // baseURL: process.env.REACT_APP_API_BASE_URL,
     headers: {
         "Content-type": "application/json",
     },
@@ -19,6 +20,7 @@ const apiClient2 = axios.create({
 
 
 const getAllProducts = async () => {
+    console.log(process.env.REACT_APP_API_BASE_URL);
     const res = await apiClient.get<IReviceProductsResponse>(API.get);
     console.log('Response DATA ', res.data);
     return res.data;

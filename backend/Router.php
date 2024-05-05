@@ -30,10 +30,6 @@ class Router
             $method = $this->path[$pathInfo]['method'];
             $controller = $this->path[$pathInfo]['controller'];
             $action = $this->path[$pathInfo]['action'];
-            // echo $method;
-            // echo $controller;
-            // echo $action;
-            // var_dump($_GET);
             if ($method === 'get') {
                 // print_r($this->path);
                 // wait from Dima advice of best solution
