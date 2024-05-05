@@ -1,7 +1,6 @@
 import { Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-// import { dummyProductsData } from './dummyData';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import names from '../../utils/types/dictionary.consts';
 import { IProduct, IReviceProductsResponse, route } from '../../utils/types/global';
 import { useMutation, useQuery } from 'react-query';
@@ -11,14 +10,13 @@ function ProductList(): JSX.Element {
     const navigate = useNavigate();
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
-    const { data: productsData, refetch: refetchProducts } = useQuery<IReviceProductsResponse>(
+    const { refetch: refetchProducts } = useQuery<IReviceProductsResponse>(
         'get-products',
         async () => {
             return await ProductsService.getAllProducts()
         },
         {
             onSettled: (res) => {
-                console.log('Res ', res);
                 if (res && res.execResInfo.status === 'success') {
                     setProducts(res.products);
                 }
@@ -30,8 +28,8 @@ function ProductList(): JSX.Element {
             return await ProductsService.deleteByIds(selectedItems)
         },
         {
-            onSettled: async (res) => {
-                console.log('Res ', res);
+            onSuccess: async (res) => {
+                console.log('Res', res);
                 await refetchProducts();
             }
         }
@@ -42,7 +40,6 @@ function ProductList(): JSX.Element {
     }
 
     const onDelete = () => {
-        console.log('Delete: ', selectedItems);
         deleteByIds();
 
     }
@@ -55,12 +52,6 @@ function ProductList(): JSX.Element {
             setSelectedItems(selectedItems.filter(item => item !== value));
         }
     };
-
-    useEffect(() => {
-        // const res = ProductService.getTodos();
-        // console.log('Recived data RES ', res);
-        console.log('productsData ', productsData);
-    }, [productsData]);
 
     return (
         <>

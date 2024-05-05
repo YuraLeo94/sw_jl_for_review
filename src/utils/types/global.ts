@@ -11,7 +11,7 @@ export enum PRODUCT_TYPES {
 }
 
 export type RequestStatus = 'success' | 'failed';
-export interface IexecResInfo {
+export interface IExecResInfo {
     message: string | string[];
     status: RequestStatus;
 }
@@ -28,6 +28,14 @@ export interface IProduct {
 }
 
 export interface IReviceProductsResponse {
-    execResInfo: IexecResInfo;
+    execResInfo: IExecResInfo;
     products: IProduct[];
-} 
+}
+
+export interface IDeleteProductResponse {
+    data: IExecResInfo;
+};
+
+export interface ICreateProductResponse {
+    data: IExecResInfo;
+};

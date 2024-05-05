@@ -24,25 +24,11 @@ type AddFormData = {
 
 function AddProduct(): JSX.Element {
   const navigate = useNavigate();
-  //   const { data: productsData } = useQuery<any>(
-  //     'get-products',
-  //     async () => {
-  //         return await ProductsService.addProduct()
-  //     },
-  //     {
-  //         onSettled: (res) => {
-  //             console.log('Res ', res);
-  //             if (res && res.execResInfo.status === 'success') {
-  //                 console.log('!!!OK');
-  //             }
-  //         }
-  //     }
-  // );
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
 
   const { mutate: addProduct } = useMutation<any, Error, IProduct>(
-    async (product: IProduct) => { return await ProductsService.addProduct(product) }
+    async (product: IProduct) => { return await ProductsService.createProduct(product) }
     ,
     {
       onSettled: (res) => {
@@ -124,16 +110,9 @@ const unregisterNotActiveTypeFields = () => {
   const onApply = async () => {
     try {
       await trigger();
-      // console.log(formData, errors);
       if (isValid) {
         setValidationErrors({});
-        const product = getValuesOfProduct();
-        addProduct(product);
-        // console.log('products ',product);
-        // console.log('SCHEMA', validationSchema);
-        // console.log('GetValues', getValues());
-        // const price = getValues('price');
-        // console.log('price', price)
+        addProduct(getValuesOfProduct());
       }
     } catch (error) {
       console.error('Error occurred while validating:', error);
@@ -141,7 +120,6 @@ const unregisterNotActiveTypeFields = () => {
   };
 
   const handleProductTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    // const type: PRODUCT_TYPES = e.target.value as unknown as PRODUCT_TYPES;
     const type: PRODUCT_TYPES = parseInt(e.target.value as string) as PRODUCT_TYPES;
     setProductType(type);
     unregisterNotActiveTypeFields();
