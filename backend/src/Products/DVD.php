@@ -1,7 +1,8 @@
 <?php
 
-// namespace Products;
-// use Product;
+namespace Products;
+
+use Products\Product;
 
 class DVD extends Product {
     private $size;

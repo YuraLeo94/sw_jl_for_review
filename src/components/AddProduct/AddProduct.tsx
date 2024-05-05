@@ -48,7 +48,6 @@ function AddProduct(): JSX.Element {
       onSettled: (res) => {
         console.log('Res ', res);
         if (res && res?.status === 'success') {
-          console.log('!!!OK');
           navigate(route.HOME);
         }
         const errors = res?.errors;

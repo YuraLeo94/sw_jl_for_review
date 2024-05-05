@@ -1,28 +1,36 @@
 <?php
 
+namespace Controllers;
+
+use Controllers\ResponseController;
+use Exception;
+use Model\ProductsModel;
+
 class ProductsController
 {
 
-    public static function add()
+    public function create(array $data)
     {
+        // var_dump($inputs); 
+        // var_dump($inputs['sku']); 
+        // var_dump(json_decode($inputs[0], true));
+        // return ResponseController::response(['status' => 'test', 'message' => 'check inputs', 'inputs' => $inputs]);
         // return response(['status' => 'test', 'message' => 'check inputs', 'inputs' => $inputs]);
-        $jsonData = file_get_contents('php://input');
-        $data = json_decode($jsonData, true);
+        // $jsonData = file_get_contents('php://input');
+        // $data = json_decode($jsonData, true);
+        $data = $this->getInputs();
         $types = [
-            1 => 'DVD',
-            2 => 'Book',
-            3 => 'Furniture'
+            1 => 'Products\DVD',
+            2 => 'Products\Book',
+            3 => 'Products\Furniture'
         ];
 
-        
+
         try {
             $productType = $data['type'] ?? null;
             if (!isset($types[$productType])) {
                 return ResponseController::response(ResponseController::getPreparedDataResponseFailed(INVALID_TYPE));
-                // return response([
-                //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-                //     RESPONSE_NAMES['messagesKeyName'] => INVALID_TYPE
-                // ]);
+
                 throw new Exception(INVALID_TYPE);
             }
 
@@ -32,7 +40,7 @@ class ProductsController
 
             $itemBySku = $productsModel->takeEntryBySKU($data['sku']);
             if ($itemBySku[EXEC_RES_INFO_KEY_NAME][RESPONSE_NAMES['statusKeyName']] === RESPONSE_NAMES['failed']) {
-                return response($itemBySku[EXEC_RES_INFO_KEY_NAME]);
+                return ResponseController::response($itemBySku[EXEC_RES_INFO_KEY_NAME]);
             }
 
             $errors = $newProduct->validate(count($itemBySku['item']) > 0);
@@ -43,44 +51,42 @@ class ProductsController
                 ]);
             }
 
-            return response($productsModel->add($newProduct->getNewProductParams()));
+            return ResponseController::response($productsModel->add($newProduct->getNewProductParams()));
             // return response(['status' => 'test', 'message' => 'check parsed data', 'data' => $data, 'data2' => $newProduct->getNewProductParams()]);
             // return response($productsModel->add($data));
         } catch (Exception $e) {
             return ResponseController::response(ResponseController::getPreparedDataResponseFailed($e->getMessage()));
-            // return response([
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
-            // ]);
         }
     }
 
-    public static function get()
+    public function get()
     {
+        // return ResponseController::response(['status' => 'test', 'message' => 'check inputs', 'inputs' => $_GET]);
         try {
-            return response((new ProductsModel(DB_PODUCTS_TABLE_NAME))->getAll());
+            return ResponseController::response(
+                (new ProductsModel(DB_PODUCTS_TABLE_NAME))->getAll()
+            );
         } catch (Exception $e) {
             return ResponseController::response(ResponseController::getPreparedDataResponseFailed($e->getMessage()));
-            // return response([
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
-            // ]);
         }
     }
 
-    public static function deleteListOfProducts()
+    public function deleteListOfProducts(array $primaryKeys)
     {
+        // $jsonData = file_get_contents('php://input');
+        // $primaryKeys = $this->getInputs();
+        try {
+            return ResponseController::response((new ProductsModel(DB_PODUCTS_TABLE_NAME))->deleteListOfProducts($primaryKeys));
+        } catch (Exception $e) {
+            return ResponseController::response(ResponseController::getPreparedDataResponseFailed($e->getMessage()));
+        }
+    }
+
+    public function getInputs()
+    {
+        // $_POST
         $jsonData = file_get_contents('php://input');
-        $primaryKeys = json_decode($jsonData, true);
-        // return response(['status' => 'test', 'message' => 'check parsed data', 'primaryKeys' => $primaryKeys]);
-        try {
-            return response((new ProductsModel(DB_PODUCTS_TABLE_NAME))->deleteListOfProducts($primaryKeys));
-        } catch (Exception $e) {
-            return ResponseController::response(ResponseController::getPreparedDataResponseFailed($e->getMessage()));
-            // return response([
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
-            // ]);
-        }
+        $data = json_decode($jsonData, true);
+        return $data;
     }
 }

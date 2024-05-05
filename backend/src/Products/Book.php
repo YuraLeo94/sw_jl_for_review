@@ -1,8 +1,8 @@
 <?php
 
-// namespace Products;
+namespace Products;
 
-// use Product;
+use Products\Product;
 
 class Book extends Product
 {
@@ -19,15 +19,6 @@ class Book extends Product
     {
         return [$this->sku, $this->name, $this->price, $this->type, null, $this->weight, null, null, null];
     }
-
-    // public function validateWeight()
-    // {
-    //     if (is_numeric($this->weight) && floatval($this->weight >= 0)) {
-    //         return true;
-    //     }
-
-    //     return false;
-    // }
 
     public function validate(bool $isSkuExist)
     {

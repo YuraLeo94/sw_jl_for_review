@@ -1,13 +1,15 @@
 <?php
 // Define configuration options
 // Define configuration options
+
+// !!!!!THINK ABOUT RENAME TO CORE POLICE. fILE NAMING;
 $allowedOrigins = [
     'http://localhost:3000',
     'http://localhost/projects/SW/backend',
     'http://localhost:3000/addproduct'
 ];
 $allowedHeaders = ['Content-Type'];
-$allowedMethods = ['GET', 'POST', 'DELETE'];
+$allowedMethods = ['OPTIONS','GET', 'POST', 'DELETE'];
 
 // Set headers for CORS
 $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
@@ -21,8 +23,12 @@ if (in_array($origin, $allowedOrigins)) {
 //     exit();
 // }
 
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
+// header("Access-Control-Allow-Methods: POST");
+// header("Access-Control-Allow-Headers: Content-Type");
+header('Content-Type: application/json');
+header('Access-Control-Allow-Methods: ' . implode(', ', $allowedMethods));
+header('Access-Control-Allow-Headers: ' . implode(', ', $allowedHeaders));
+
 // Handle preflight (OPTIONS) requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
@@ -38,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Set default headers for non-preflight requests
-header('Content-Type: application/json');
+header('Content-Type: application/json-rpc');
 
 // Validate allowed methods for non-preflight requests
 if (!in_array($_SERVER['REQUEST_METHOD'], $allowedMethods)) {
@@ -46,9 +52,10 @@ if (!in_array($_SERVER['REQUEST_METHOD'], $allowedMethods)) {
     exit();
 }
 
-
-
+//config
 define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'scandiweb');
+
+// v konfigi zapretit dostup k php

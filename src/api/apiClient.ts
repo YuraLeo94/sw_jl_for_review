@@ -1,9 +1,17 @@
 import axios from "axios";
-import { BASE_URL2 } from "./ProductsService";
-import { IexecResInfo, IProduct, IReviceProductsResponse } from "../utils/types/global";
+import { API_URL, API_URL2 } from "./ProductsService";
+import { IProduct, IReviceProductsResponse } from "../utils/types/global";
+import { API } from "../utils/types/api.const";
 
 const apiClient = axios.create({
-    baseURL: BASE_URL2,
+    baseURL: API_URL2,
+    headers: {
+        "Content-type": "application/json",
+    },
+});
+
+const apiClient2 = axios.create({
+    baseURL: API_URL,
     headers: {
         "Content-type": "application/json",
     },
@@ -11,18 +19,18 @@ const apiClient = axios.create({
 
 
 const getAllProducts = async () => {
-    const res = await apiClient.get<IReviceProductsResponse>('/products/get');
-    console.log('REsponse DATA ', res.data);
+    const res = await apiClient.get<IReviceProductsResponse>(API.get);
+    console.log('Response DATA ', res.data);
     return res.data;
 }
 
 const addProduct = async (product: IProduct) => {
-    const res = await apiClient.post<any>('/products/add', { ...product });
+    const res = await apiClient.post<any>(API.add, { ...product });
     return res.data;
 }
 
 const deleteByIds = async (ids: string[]) => {
-    const response = await apiClient.delete<any>('/products/delete', { data: { ...ids } });
+    const response = await apiClient.delete<any>(API.delete, { data: { ...ids } });
     return response.data;
 };
 

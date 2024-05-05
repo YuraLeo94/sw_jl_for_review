@@ -1,8 +1,10 @@
-CREATE DATABASE IF NOT EXISTS scandiweb;
+CREATE DATABASE IF NOT EXISTS scandiweb2 CHARACTER SET utf8 COLLATE utf8_bin;
+
+USE scandiweb2;
 
 CREATE TABLE `products` (
-  `sku` varchar(255) COLLATE utf8_bin NOT NULL,
-  `name` varchar(255) COLLATE utf8_bin NOT NULL,
+  `sku` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
   `price` float NOT NULL,
   `type` int(11) NOT NULL,
   `size` int(11),
@@ -11,6 +13,10 @@ CREATE TABLE `products` (
   `width` float,
   `length` float
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_bin;
+
+ALTER TABLE `products`
+  ADD PRIMARY KEY (`sku`);
+COMMIT;
 
 INSERT INTO
   `products` (

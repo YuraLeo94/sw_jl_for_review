@@ -1,16 +1,23 @@
 <?php
 
-// namespace Model;
+namespace Model;
 
-// use Database\Database;
-// use PDOException;
-// use Exception;
+use Controllers\ResponseController;
+
+use Database\Database;
+use PDOException;
+use Exception;
+// easy to read update
 interface IProductsModel
 {
+    public function add(array $data);
     public function getAll();
 }
 
-
+// Rename to repositories and create repor services ProductsModel -> ProductsServiece
+// example here -> https://github.com/Dmitrijs1710/Crypto_market/blob/main/app/Repositories/CoinsFromApiRepository.php
+// ask naming chat gtp!!
+// Products move to model;
 class ProductsModel implements IProductsModel
 {
 
@@ -25,10 +32,10 @@ class ProductsModel implements IProductsModel
     {
         // return ['status' => 'test', 'message' => 'check parsed data', 'data' => $data];
         $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productAddOkMessage']);
-        
+
         try {
 
-            $con = (new Database())->get();
+            $con = Database::get();
             $placeholders = implode(',', array_fill(0, count($data), '?'));
             // Prepare the query
             $query = 'INSERT INTO ' . $this->table_name . " VALUES ($placeholders)";
@@ -37,10 +44,7 @@ class ProductsModel implements IProductsModel
             // Check if the statement was prepared successfully
             if (!$stmt) {
                 return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['prepareStatementFailedMessage']);
-                // return array(
-                //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-                //     RESPONSE_NAMES['messagesKeyName'] => RESPONSE_NAMES['prepareStatementFailedMessage']
-                // );
+
                 throw new Exception(RESPONSE_NAMES['prepareStatementFailedMessage']);
             }
 
@@ -57,10 +61,7 @@ class ProductsModel implements IProductsModel
             // Check if bind_param method exists on the statement object
             if (!method_exists($stmt, 'bind_param')) {
                 return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['bindParamIssueMessage']);
-                // return array(
-                //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-                //     RESPONSE_NAMES['messagesKeyName'] => RESPONSE_NAMES['bindParamIssueMessage']
-                // );
+
                 throw new Exception(RESPONSE_NAMES['bindParamIssueMessage']);
             }
 
@@ -72,47 +73,33 @@ class ProductsModel implements IProductsModel
 
             if (!$success) {
                 $execResInfo = ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['productAddFailedMessage']);
-                // $execResInfo = array(
-                //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-                //     RESPONSE_NAMES['messagesKeyName'] => RESPONSE_NAMES['productAddFailedMessage']
-                // );
             }
         } catch (PDOException $e) {
             $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
-            // $execResInfo = array(
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
-            // );
         } catch (Exception $e) {
             $execResInfo = ResponseController::getPreparedDataResponseFailed($e->getMessage());
-            // $execResInfo = array(
-            //     RESPONSE_NAMES['statusKeyName'] => RESPONSE_NAMES['failed'],
-            //     RESPONSE_NAMES['messagesKeyName'] => $e->getMessage()
-            // );
         } finally {
             // Close the statement and the database connection
             if ($stmt) {
                 $stmt->close();
             }
-            if ($con) {
-                $con->close();
-            }
+            // if ($con) {
+            //     $con->close();
+            // }
+
+            // static one instance example ->
+            // https://github.com/Dmitrijs1710/Crypto_market/blob/main/app/Database.php
         }
 
         return $execResInfo;
     }
 
-
-
-
-
-
     // need fix saving data to the object;
     public function getAll(): array
     {
         $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productRecivedSuccessMessage']);
-                
-        $con = (new Database())->get();
+
+        $con = Database::get();
         $query = "SELECT * FROM " . $this->table_name;
         $result = mysqli_query($con, $query);
         $products = [];
@@ -155,9 +142,9 @@ class ProductsModel implements IProductsModel
             // );
         } finally {
             // Close the database connection
-            if ($con) {
-                mysqli_close($con);
-            }
+            // if ($con) {
+            //     mysqli_close($con);
+            // }
         }
         return array(EXEC_RES_INFO_KEY_NAME => $execResInfo, PRODUCTS_KEY_NAME => $products);
     }
@@ -171,7 +158,7 @@ class ProductsModel implements IProductsModel
         // );
         try {
             // Get the database connection
-            $con = (new Database())->get();
+            $con = Database::get();
 
             // Generate the placeholders for the primary keys
             $placeholders = implode(',', array_fill(0, count($primaryKeys), '?'));
@@ -213,16 +200,16 @@ class ProductsModel implements IProductsModel
             // );
         } finally {
             // Close the database connection
-            if ($con) {
-                $con->close(); // Close the connection properly
-            }
+            // if ($con) {
+            //     $con->close(); // Close the connection properly
+            // }
         }
         return $execResInfo;
     }
 
     public function takeEntryBySKU($sku)
     {
-        $con = (new Database())->get();
+        $con = Database::get();
         $query = "SELECT * FROM " . $this->table_name . " WHERE sku = ?";
         $stmt = mysqli_prepare($con, $query);
         mysqli_stmt_bind_param($stmt, "s", $sku);
@@ -256,14 +243,15 @@ class ProductsModel implements IProductsModel
             // Close the statement
             mysqli_stmt_close($stmt);
             // Close the database connection
-            if ($con) {
-                mysqli_close($con);
-            }
+            // if ($con) {
+            //     mysqli_close($con);
+            // }
         }
 
         return [EXEC_RES_INFO_KEY_NAME => $execResInfo, 'item' => $item];
     }
 
+    // TODO move to helper
     function detectBindTypes(array $data): string
     {
         $types = '';

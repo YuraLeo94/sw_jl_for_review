@@ -1,4 +1,5 @@
 <?php
+namespace Products;
 
 abstract class Product
 {
@@ -29,11 +30,6 @@ abstract class Product
     {
         return (strlen($this->name) > 0);
     }
-
-    // private function validatePrice()
-    // {
-    //     return !(filter_var($this->price, FILTER_VALIDATE_FLOAT) && (strlen($this->price) > 0) && floatval($this->price >= 0));
-    // }
 
     private function validateType()
     {

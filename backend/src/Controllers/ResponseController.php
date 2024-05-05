@@ -1,5 +1,7 @@
 <?php
 
+namespace Controllers;
+
 class ResponseController
 {
 
@@ -7,11 +9,16 @@ class ResponseController
     {
     }
 
-    static function response($response)
+    static function response(array $response)
     {
-        header("Content-Type: application/json");
+        // header("Content-Type: application/json");
         echo json_encode($response);
     }
+
+    //Ping Dima today 05.05.2024
+    // function setResponse(array $response) {
+    //     echo json_encode($response);
+    // }
 
 
     static function getPreparedDataResponseFailed(string $message): array

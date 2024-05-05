@@ -1,33 +1,49 @@
 <?php
+
 class Router
 {
     private $path = [];
 
-    public function get(string $path, string $controller)
+    public function get(string $path, string $controller, $action)
     {
-        array_push($this->path, [$path, $controller, 'get']);
+        $this->path[$path] = [
+            'controller' => $controller,
+            'action' => $action,
+            'method' => 'get'
+        ];
     }
 
-    public function post(string $path, string $controller)
+    public function post(string $path, string $controller, $action)
     {
-        array_push($this->path, [$path, $controller, 'post']);
+        $this->path[$path] = [
+            'controller' => $controller,
+            'action' => $action,
+            'method' => 'post'
+        ];
     }
 
     public function handle()
     {
         $pathInfo = isset($_SERVER['PATH_INFO']) ? htmlspecialchars($_SERVER['PATH_INFO']) : '';
-        $key = array_search(strtolower($pathInfo), array_column($this->path, 0));
-        
-        if ($key !== false) {
-            $method = $this->path[$key][2];
-            $controller = $this->path[$key][1];
+        // var_dump($_SERVER['PATH_INFO'][$_POST]);
+        if (array_key_exists($pathInfo, $this->path)) {
+            $method = $this->path[$pathInfo]['method'];
+            $controller = $this->path[$pathInfo]['controller'];
+            $action = $this->path[$pathInfo]['action'];
+            // echo $method;
+            // echo $controller;
+            // echo $action;
+            // var_dump($_GET);
             if ($method === 'get') {
-                return call_user_func($controller);
+                // print_r($this->path);
+                // wait from Dima advice of best solution
+                return (new $controller)->{$action}();
             } else {
-                return call_user_func($controller, $_POST);
+                $jsonData = file_get_contents('php://input');
+                $data = json_decode($jsonData, true);
+                return (new $controller)->{$action}($data);
             }
-        }
-        else {
+        } else {
             // Path not found
             header('HTTP/1.1 404 Not Found');
             echo '404 Not Found';

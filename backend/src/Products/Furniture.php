@@ -1,8 +1,8 @@
 <?php
 
-// namespace Products;
+namespace Products;
 
-// use Product;
+use Products\Product;
 
 class Furniture extends Product
 {
