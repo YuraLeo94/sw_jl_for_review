@@ -5,7 +5,7 @@ import { route } from './utils/types/global';
 
 const ProductList = lazy(() => import('./components/ProductList/ProductList'));
 const AddProduct = lazy(() => import('./components/AddProduct/AddProduct'));
-const Footer = lazy(() => import('./Footer'));
+const Footer = lazy(() => import('./components/Footer'));
 
 function App(): JSX.Element {
   return (
