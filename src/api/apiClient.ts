@@ -1,10 +1,9 @@
 import axios from "axios";
 import { ICreateProductResponse, IDeleteProductResponse, IProduct, IReviceProductsResponse } from "../utils/types/global";
 import { API } from "../utils/types/api.const";
-// export const API_URL = 'http://localhost/projects/SW/backend';
+
 const apiClient = axios.create({
     baseURL:  process.env.REACT_APP_API_URL,
-    // baseURL: process.env.REACT_APP_API_BASE_URL,
     headers: {
         "Content-type": "application/json",
     },
