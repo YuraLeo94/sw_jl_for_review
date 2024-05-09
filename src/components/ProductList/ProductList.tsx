@@ -30,7 +30,6 @@ function ProductList(): JSX.Element {
         },
         {
             onSuccess: async (res) => {
-                console.log('Res', res);
                 await refetchProducts();
             }
         }

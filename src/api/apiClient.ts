@@ -11,9 +11,7 @@ const apiClient = axios.create({
 
 
 const getAllProducts = async () => {
-    console.log(process.env.REACT_APP_API_BASE_URL);
     const res = await apiClient.get<IReviceProductsResponse>(API.get);
-    console.log('Response DATA ', res.data);
     return res.data;
 }
 
