@@ -32,14 +32,11 @@ function AddProduct(): JSX.Element {
     ,
     {
       onSettled: (res) => {
-        console.log('Res ', res);
         if (res && res?.status === 'success') {
           navigate(route.HOME);
         }
         const errors = res?.errors;
-        console.log('ERRORS', errors);
         if (errors && Object.keys(errors).length > 0) {
-          console.log('ERRORS', errors);
           setValidationErrors(errors);
         }
       }
@@ -99,14 +96,14 @@ function AddProduct(): JSX.Element {
       length: length !== undefined ? parseFloat(length.toString()) : null,
     }
   }
-const [activeTypeFields, setActiveTypeFields] = useState<(keyof AddFormData)[] | null>(null);
+  const [activeTypeFields, setActiveTypeFields] = useState<(keyof AddFormData)[] | null>(null);
 
-const unregisterNotActiveTypeFields = () => {
-  // Unregister the field
-  activeTypeFields?.forEach(fieldName => {
-    unregister(fieldName);
-  });
-};
+  const unregisterNotActiveTypeFields = () => {
+    activeTypeFields?.forEach(fieldName => {
+      unregister(fieldName);
+    });
+  };
+
   const onApply = async () => {
     try {
       await trigger();

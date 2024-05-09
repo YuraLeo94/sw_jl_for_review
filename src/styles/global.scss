@@ -38,7 +38,9 @@ input[type=number] {
         z-index: -1;
     }
 
-    &:hover, &:active, &:focus {
+    &:hover,
+    &:active,
+    &:focus {
         border: 1px solid $black;
     }
 }

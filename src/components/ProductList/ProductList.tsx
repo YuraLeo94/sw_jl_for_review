@@ -10,6 +10,7 @@ function ProductList(): JSX.Element {
     const navigate = useNavigate();
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
+
     const { refetch: refetchProducts } = useQuery<IReviceProductsResponse>(
         'get-products',
         async () => {
