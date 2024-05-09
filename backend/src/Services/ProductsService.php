@@ -21,18 +21,15 @@ class ProductsService
 
     public function add(array $data): array
     {
-        // return ['status' => 'test', 'message' => 'check parsed data', 'data' => $data];
         $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productAddOkMessage']);
 
         try {
 
             $con = Database::get();
             $placeholders = implode(',', array_fill(0, count($data), '?'));
-            // Prepare the query
             $query = 'INSERT INTO ' . $this->table_name . " VALUES ($placeholders)";
             $stmt = $con->prepare($query);
 
-            // Check if the statement was prepared successfully
             if (!$stmt) {
                 return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['prepareStatementFailedMessage']);
 
@@ -45,7 +42,6 @@ class ProductsService
 
             BindHelper::bind($stmt, $data);
 
-            // Execute the statement
             $success = $stmt->execute();
 
             if (!$success) {
@@ -73,7 +69,6 @@ class ProductsService
         $result = mysqli_query($con, $query);
         $products = [];
 
-        // Check if the query was successful
         if (!$result) {
             $execResInfo = ResponseController::getPreparedDataResponseFailed(mysqli_error($con));
 
@@ -107,16 +102,9 @@ class ProductsService
         $execResInfo = ResponseController::getPreparedDataResponseSuccess(RESPONSE_NAMES['productDeltedSuccessMessage']);
 
         try {
-            // Get the database connection
             $con = Database::get();
-
-            // Generate the placeholders for the primary keys
             $placeholders = implode(',', array_fill(0, count($primaryKeys), '?'));
-
-            // Construct the query with the placeholders
             $query = "DELETE FROM " . $this->table_name . " WHERE sku IN ($placeholders)";
-
-            // Prepare the statement
             $stmt = $con->prepare($query);
 
             if (!$stmt) {
@@ -125,17 +113,13 @@ class ProductsService
                 throw new Exception(RESPONSE_NAMES['prepareStatementFailedMessage']);
             }
 
-            // Check if the number of placeholders matches the number of primary keys
             if ($stmt && $stmt->param_count != count($primaryKeys)) {
                 return ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['bindParamMatchIssueMessage']);
             }
 
             BindHelper::bind($stmt, $primaryKeys);
-
-            // Execute the statement
             $success = $stmt->execute();
 
-            // Check if the execution was successful
             if (!$success) {
                 $execResInfo = ResponseController::getPreparedDataResponseFailed(RESPONSE_NAMES['productDeltedFailedMessage']);
             }

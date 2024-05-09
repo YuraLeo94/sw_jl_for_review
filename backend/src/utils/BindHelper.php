@@ -30,7 +30,8 @@ class BindHelper
     }
 
 
-    public static function bind($stmt, array $data) {
+    public static function bind($stmt, array $data)
+    {
         $params = [];
         $types = self::detectBindTypes($data);
 
@@ -41,6 +42,4 @@ class BindHelper
         array_unshift($params, $types);
         call_user_func_array(array($stmt, 'bind_param'), $params);
     }
-
-
 }

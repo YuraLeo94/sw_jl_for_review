@@ -1,6 +1,6 @@
-CREATE DATABASE IF NOT EXISTS scandiweb2 CHARACTER SET utf8 COLLATE utf8_bin;
+CREATE DATABASE IF NOT EXISTS scandiweb CHARACTER SET utf8 COLLATE utf8_bin;
 
-USE scandiweb2;
+USE scandiweb;
 
 CREATE TABLE `products` (
   `sku` varchar(255) NOT NULL,
