@@ -254,7 +254,7 @@ const unregisterNotActiveTypeFields = () => {
               {names.ADD_FORM_TYPE_LABEL}
             </label>
             <div className='custom-select'>
-              <select className='custom-select' {...register('productType')} onChange={handleProductTypeChange}>
+              <select className='custom-select' id='productType' {...register('productType')} onChange={handleProductTypeChange}>
                 <option value={0}>{names.ADD_FORM_TYPE_LABEL}</option>
                 {typeOptions.map(option => <option key={option.value} id={option.id} value={option.value}>{option.text}</option>)}
               </select>
